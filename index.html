@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel do Dono - Motoflash</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    body { background: #f4f4f4; color: #222; padding: 20px; }
+    header { background: #111; color: white; padding: 18px 20px; border-radius: 10px; margin-bottom: 20px; }
+    h1 { font-size: 22px; }
+    .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    button { background: #f59e0b; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 5px; font-weight: bold; }
+    button.sucesso { background: #16a34a; }
+    button.perigo { background: #dc2626; }
+    input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+    .status { padding: 5px 10px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+    .status.ativo { background: #dcfce7; color: #166534; }
+    .status.inativo { background: #fee2e2; color: #991b1b; }
+    .pedido { border-left: 4px solid #f59e0b; padding-left: 15px; margin: 10px 0; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 20px; }
+    .tab { padding: 10px 15px; background: #ddd; border-radius: 8px; cursor: pointer; font-size: 14px; }
+    .tab.ativa { background: #f59e0b; color: white; }
+    .aba { display: none; }
+    .aba.mostra { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏍️ Painel do Dono — Motoflash</h1>
+  <p style="opacity:0.8; font-size:14px;">Controle total do sistema</p>
+</header>
+
+<div class="tabs">
+  <div class="tab ativa" onclick="mostrarAba('restaurantes')">🏪 Restaurantes</div>
+  <div class="tab" onclick="mostrarAba('pedidos')">📦 Pedidos</div>
+  <div class="tab" onclick="mostrarAba('financeiro')">💰 Financeiro</div>
+</div>
+
+<!-- ABA RESTAURANTES -->
+<div id="restaurantes" class="aba mostra">
+  <div class="card">
+    <h3>➕ Cadastrar Restaurante</h3>
+    <input type="text" id="nomeRestaurante" placeholder="Nome do restaurante">
+    <input type="text" id="contatoRestaurante" placeholder="WhatsApp / Telefone">
+    <button onclick="cadastrarRestaurante()">Cadastrar</button>
+  </div>
+
+  <div class="card">
+    <h3>📋 Restaurantes Cadastrados</h3>
+    <div id="listaRestaurantes"></div>
+  </div>
+</div>
+
+<!-- ABA PEDIDOS -->
+<div id="pedidos" class="aba">
+  <div class="card">
+    <h3>📦 Pedidos Pendentes de Confirmação</h3>
+    <div id="listaPedidos"></div>
+  </div>
+</div>
+
+<!-- ABA FINANCEIRO -->
+<div id="financeiro" class="aba">
+  <div class="card">
+    <h3>💰 Resumo Financeiro</h3>
+    <p style="font-size:18px; margin:10px 0;">Taxa por entrega: <strong style="color:#f59e0b;">R$ 10,00</strong></p>
+    <p style="font-size:18px; margin:10px 0;">Sua comissão (10%): <strong style="color:#16a34a;">R$ 1,00</strong></p>
+    <p style="font-size:18px; margin:10px 0;">Repasse motoboy: <strong>R$ 9,00</strong></p>
+    <hr style="margin:15px 0;">
+    <h4>Histórico de Entregas</h4>
+    <div id="historicoFinanceiro"></div>
+  </div>
+</div>
+
+<script>
+// DADOS ARMAZENADOS LOCALMENTE
+let restaurantes = JSON.parse(localStorage.getItem('restaurantes')) || [];
+let pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
+let historico = JSON.parse(localStorage.getItem('historicoAdmin')) || [];
+
+// FUNÇÕES DE NAVEGAÇÃO
+function mostrarAba(nome) {
+  document.querySelectorAll('.aba').forEach(a => a.classList.remove('mostra'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativa'));
+  document.getElementById(nome).classList.add('mostra');
+  event.target.classList.add('ativa');
+}
+
+// RESTAURANTES
+function cadastrarRestaurante() {
+  const nome = document.getElementById('nomeRestaurante').value;
+  const contato = document.getElementById('contatoRestaurante').value;
+  if(!nome) return alert('Digite o nome!');
+  
+  restaurantes.push({
+    id: Date.now(),
+    nome,
+    contato,
+    ativo: true,
+    dataCadastro: new Date().toLocaleDateString('pt-BR')
+  });
+  
+  salvarRestaurantes();
+  listarRestaurantes();
+  document.getElementById('nomeRestaurante').value = '';
+  document.getElementById('contatoRestaurante').value = '';
+  alert('✅ Restaurante cadastrado! Primeiro mês GRÁTIS!');
+}
+
+function listarRestaurantes() {
+  const container = document.getElementById('listaRestaurantes');
+  if(restaurantes.length === 0) {
+    container.innerHTML = '<p style="color:#666; padding:10px;">Nenhum restaurante cadastrado ainda.</p>';
+    return;
+  }
+  container.innerHTML = restaurantes.map(r => `
+    <div style="padding:12px; border-bottom:1px solid #eee;">
+      <strong>${r.nome}</strong>
+      <span class="status ${r.ativo ? 'ativo' : 'inativo'}" style="margin-left:10px;">
+        ${r.ativo ? 'ATIVO' : 'INATIVO'}
+      </span>
+      <p style="font-size:13px; color:#666;">${r.contato} — Desde: ${r.dataCadastro}</p>
+      <button onclick="alternarStatus(${r.id})" style="padding:6px 10px; font-size:13px;">
+        ${r.ativo ? 'Bloquear' : 'Liberar'}
+      </button>
+    </div>
+  `).join('');
+}
+
+function alternarStatus(id) {
+  const r = restaurantes.find(x => x.id === id);
+  r.ativo = !r.ativo;
+  salvarRestaurantes();
+  listarRestaurantes();
+}
+
+function salvarRestaurantes() {
+  localStorage.setItem('restaurantes', JSON.stringify(restaurantes));
+}
+
+// PEDIDOS
+function listarPedidos() {
+  const container = document.getElementById('listaPedidos');
+  const pendentes = pedidos.filter(p => p.status === 'aguardando-pagamento' || p.status === 'aguardando-confirmação');
+  
+  if(pendentes.length === 0) {
+    container.innerHTML = '<p style="color:#666; padding:10px;">Nenhum pedido pendente.</p>';
+    return;
+  }
+  
+  container.innerHTML = pendentes.map(p => `
+    <div class="pedido" style="background:#fef9e7; padding:12px; border-radius:8px; margin-bottom:10px;">
+      <p><strong>Restaurante:</strong> ${p.restaurante || 'Não identificado'}</p>
+      <p><strong>Para:</strong> ${p.endereco}</p>
+      <p><strong>Valor da entrega:</strong> R$ 10,00</p>
+      <p><strong>Sua taxa:</strong> R$ 1,00 | <strong>Motoboy recebe:</strong> R$ 9,00</p>
+      <p style="color:#f59e0b; font-weight:bold;">Status: Aguardando confirmação do PIX</p>
+      <button class="sucesso" onclick="confirmarPagamento(${p.id})">✅ PIX Recebido — Liberar Pedido</button>
+      <button class="perigo" onclick="cancelarPedido(${p.id})">❌ Cancelar</button>
+    </div>
+  `).join('');
+}
+
+function confirmarPagamento(id) {
+  const p = pedidos.find(x => x.id === id);
+  p.status = 'disponivel';
+  
+  // Registra no histórico financeiro
+  historico.unshift({
+    data: new Date().toLocaleString('pt-BR'),
+    restaurante: p.restaurante || 'Não identificado',
+    taxaSua: 1.00,
+    repasseMotoboy: 9.00
+  });
+  
+  localStorage.setItem('pedidos', JSON.stringify(pedidos));
+  localStorage.setItem('historicoAdmin', JSON.stringify(historico));
+  listarPedidos();
+  listarFinanceiro();
+  alert('✅ PIX confirmado! Pedido disponível para os motoboys!');
+}
+
+function cancelarPedido(id) {
+  if(confirm('Tem certeza que deseja cancelar?')) {
+    pedidos = pedidos.filter(x => x.id !== id);
+    localStorage.setItem('pedidos', JSON.stringify(pedidos));
+    listarPedidos();
+  }
+}
+
+// FINANCEIRO
+function listarFinanceiro() {
+  const container = document.getElementById('historicoFinanceiro');
+  if(historico.length === 0) {
+    container.innerHTML = '<p style="color:#666; padding:10px;">Nenhuma entrega concluída ainda.</p>';
+    return;
+  }
+  container.innerHTML = historico.map(h => `
+    <div style="padding:8px 0; border-bottom:1px solid #eee; font-size:14px;">
+      <strong>${h.data}</strong> — ${h.restaurante}<br>
+      Sua receita: <span style="color:#16a34a;">+R$ ${h.taxaSua.toFixed(2)}</span> | 
+      Motoboy: R$ ${h.repasseMotoboy.toFixed(2)}
+    </div>
+  `).join('');
+}
+
+// ATUALIZA TUDO AO CARREGAR
+listarRestaurantes();
+listarPedidos();
+listarFinanceiro();
+
+// SINCRONIZAÇÃO — verifica atualizações de tempos em tempos
+setInterval(() => {
+  pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
+  listarPedidos();
+}, 3000);
+</script>
+
+</body>
+</html>
