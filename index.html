@@ -155,7 +155,8 @@ async function confirmarPix(idPedido) {
 }
 
 async function carregarUsuarios() {
-  const snap = await db.collection('Usuário')
+  const snap = await db.collection('usuarios')
+
 
     .orderBy('DataCadastro', 'desc').get();
   
