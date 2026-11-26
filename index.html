@@ -165,7 +165,8 @@ async function carregarUsuarios() {
     : snap.docs.map(doc => {
         const u = doc.data();
         const tipo = u.Tipo === 'restaurante' ? '🍽️ Restaurante' : u.Tipo === 'motoboy' ? '🏍️ Motoboy' : '👨‍💼 Dono';
-        const data = u.DataCadastro ? new Date(u.DataCadastro.toDate()).toLocaleString('pt-BR') : '—';
+        const data = u.DataCadastro || '—';
+
         return `
           <div style="padding:12px 0; border-bottom:1px solid #eee;">
             <strong>${u.Nome || 'Sem nome'}</strong> — ${tipo}<br>
