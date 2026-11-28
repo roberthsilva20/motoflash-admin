@@ -90,17 +90,16 @@
       <div id="lista-usuarios">
         <p class="sem-dados">Carregando...</p>
       </div>
-    </div>
 
-    <div class="card">
-      <h2>📊 Resumo Geral</h2>
-      <div class="resumo-box">
-        <p><strong>Total de pedidos:</strong> <span id="total-pedidos">0</span></p>
-        <p><strong>Sua taxa (20%):</strong> <span id="total-taxa">R$ 0,00</span></p>
-        <p class="total">💰 Total ganho: <span id="total-ganho">R$ 0,00</span></p>
+      <div class="card">
+        <h2>📊 Resumo Geral</h2>
+        <div class="resumo-box">
+          <p><strong>Total de pedidos:</strong> <span id="total-pedidos">0</span></p>
+          <p><strong>Sua taxa (20%):</strong> <span id="total-taxa">R$ 0,00</span></p>
+          <p class="total">💰 Total ganho: <span id="total-ganho">R$ 0,00</span></p>
+        </div>
       </div>
     </div>
-  </div>
 
   <script>
     const firebaseConfig = {
@@ -166,13 +165,12 @@
       return new Date(timestamp.toDate()).toLocaleString('pt-BR');
     }
 
-    // Aba 1: Aguardando Confirmação de PIX
+    // Aba 1: Aguardando Confirmação de PIX (SEM orderBy que pede índice!)
     function carregarAguardandoPix() {
       const lista = document.getElementById('lista-pix');
       
       db.collection("pedidos")
         .where("status", "==", "aguardando-aprovacao")
-        .orderBy("data", "desc")
         .onSnapshot(snapshot => {
           lista.innerHTML = "";
           
@@ -204,7 +202,6 @@
       const lista = document.getElementById('lista-pedidos');
       
       db.collection("pedidos")
-        .orderBy("data", "desc")
         .limit(50)
         .onSnapshot(snapshot => {
           lista.innerHTML = "";
@@ -244,7 +241,6 @@
       db.collection("pedidos")
         .where("status", "==", "aceito")
         .where("pagoParaMotoboy", "!=", true)
-        .orderBy("data", "desc")
         .onSnapshot(snapshot => {
           lista.innerHTML = "";
           
@@ -275,7 +271,6 @@
       let totalTaxa = 0;
       
       db.collection("usuarios")
-        .orderBy("nome")
         .onSnapshot(snapUsuarios => {
           lista.innerHTML = "";
           
