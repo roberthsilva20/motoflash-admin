@@ -53,7 +53,6 @@
     <button class="aba-btn" onclick="mostrarAba('usuarios')">👥 Usuários</button>
   </div>
 
-  <!-- Aba: Aguardando Confirmação de PIX -->
   <div id="area-pix">
     <div class="card">
       <h2>⏳ Aguardando Confirmação de PIX</h2>
@@ -63,7 +62,6 @@
     </div>
   </div>
 
-  <!-- Aba: Todos os Pedidos -->
   <div id="area-pedidos" class="oculto">
     <div class="card">
       <h2>📋 Todos os Pedidos</h2>
@@ -73,7 +71,6 @@
     </div>
   </div>
 
-  <!-- Aba: Motoboys e Valores a Pagar -->
   <div id="area-motoboys" class="oculto">
     <div class="card">
       <h2>🏍️ Valores a Pagar — Motoboys</h2>
@@ -83,7 +80,6 @@
     </div>
   </div>
 
-  <!-- Aba: Todos os Usuários -->
   <div id="area-usuarios" class="oculto">
     <div class="card">
       <h2>👥 Usuários Cadastrados</h2>
@@ -100,8 +96,9 @@
         </div>
       </div>
     </div>
+  </div>
 
-  <script>
+<script>
     const firebaseConfig = {
       apiKey: "AIzaSyBD9qiDcnYQJDGn850KUkMpiBatuP0DWT8",
       authDomain: "motoflash-b1396.firebaseapp.com",
@@ -114,10 +111,17 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let abaAtual = 'pix';
+    function valorSeguro(valor){
+      const v = Number(valor || 0);
+      return v.toFixed(2).replace(".",",");
+    }
+
+    function formatarData(timestamp) {
+      if (!timestamp) return "";
+      return new Date(timestamp.toDate()).toLocaleString('pt-BR');
+    }
 
     function mostrarAba(nome) {
-      abaAtual = nome;
       document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativo'));
       event.target.classList.add('ativo');
       
@@ -134,10 +138,8 @@
       if (nome === 'usuarios') carregarUsuarios();
     }
 
-    // Aprovar PIX — libera pedido para motoboys
     function aprovarPix(pedidoId) {
       if (!confirm("✅ Confirmar PIX? O pedido ficará disponível para os motoboys aceitarem.")) return;
-      
       db.collection("pedidos").doc(pedidoId).update({
         status: "confirmado"
       }).then(() => {
@@ -147,10 +149,8 @@
       });
     }
 
-    // Marcar corrida como PAGA para o motoboy
     function marcarComoPago(pedidoId, motoboyId) {
       if (!confirm("✅ Marcar como PAGO? O valor vai ser zerado da conta do motoboy.")) return;
-      
       db.collection("pedidos").doc(pedidoId).update({
         pagoParaMotoboy: true
       }).then(() => {
@@ -160,33 +160,24 @@
       });
     }
 
-    function formatarData(timestamp) {
-      if (!timestamp) return "";
-      return new Date(timestamp.toDate()).toLocaleString('pt-BR');
-    }
-
-    // Aba 1: Aguardando Confirmação de PIX (SEM orderBy que pede índice!)
     function carregarAguardandoPix() {
       const lista = document.getElementById('lista-pix');
-      
       db.collection("pedidos")
         .where("status", "==", "aguardando-aprovacao")
         .onSnapshot(snapshot => {
           lista.innerHTML = "";
-          
           if (snapshot.empty) {
             lista.innerHTML = '<p class="sem-dados">Nenhum pedido aguardando confirmação.</p>';
             return;
           }
-
           snapshot.forEach(doc => {
             const p = doc.data();
             lista.innerHTML += `
               <div class="pedido">
                 <h4>📦 ${p.restauranteNome || 'Restaurante'}</h4>
-                <p><strong>Valor:</strong> R$ ${p.valorTotal.toFixed(2).replace('.', ',')}</p>
-                <p><strong>Seu (20%):</strong> R$ ${p.valorDono.toFixed(2).replace('.', ',')}</p>
-                <p><strong>Motoboy (80%):</strong> R$ ${p.valorMotoboy.toFixed(2).replace('.', ',')}</p>
+                <p><strong>Valor:</strong> R$ ${valorSeguro(p.valorTotal)}</p>
+                <p><strong>Seu (20%):</strong> R$ ${valorSeguro(p.valorDono)}</p>
+                <p><strong>Motoboy (80%):</strong> R$ ${valorSeguro(p.valorMotoboy)}</p>
                 <p><strong>Endereço:</strong> ${p.endereco}</p>
                 <p style="font-size:12px;color:#888;">${formatarData(p.data)}</p>
                 <span class="status aguardando">⏳ Aguardando sua confirmação</span>
@@ -197,34 +188,28 @@
         });
     }
 
-    // Aba 2: Todos os Pedidos
     function carregarTodosPedidos() {
       const lista = document.getElementById('lista-pedidos');
-      
       db.collection("pedidos")
         .limit(50)
         .onSnapshot(snapshot => {
           lista.innerHTML = "";
-          
           if (snapshot.empty) {
             lista.innerHTML = '<p class="sem-dados">Nenhum pedido criado ainda.</p>';
             return;
           }
-
           snapshot.forEach(doc => {
             const p = doc.data();
             let statusTexto = p.status;
             let statusClasse = 'pendente';
-            
             if (p.status === 'pendente') { statusTexto = '⏳ Restaurante não enviou PIX'; statusClasse = 'pendente'; }
             if (p.status === 'aguardando-aprovacao') { statusTexto = '⏳ Aguardando SUA confirmação'; statusClasse = 'aguardando'; }
             if (p.status === 'confirmado') { statusTexto = '✅ Disponível para motoboys'; statusClasse = 'confirmado'; }
             if (p.status === 'aceito') { statusTexto = '🏍️ Aceito por: ' + (p.motoboyNome || 'Motoboy'); statusClasse = 'confirmado'; }
-            
             lista.innerHTML += `
               <div class="pedido">
                 <h4>📦 ${p.restauranteNome || 'Restaurante'}</h4>
-                <p><strong>Valor:</strong> R$ ${p.valorTotal.toFixed(2).replace('.', ',')}</p>
+                <p><strong>Valor:</strong> R$ ${valorSeguro(p.valorTotal)}</p>
                 <p><strong>Motoboy:</strong> ${p.motoboyNome || 'Aguardando...'}</p>
                 <p style="font-size:12px;color:#888;">${formatarData(p.data)}</p>
                 <span class="status ${statusClasse}">${statusTexto}</span>
@@ -234,19 +219,14 @@
         });
     }
 
-    // Aba 3: Motoboys — valores a receber
     function carregarMotoboysValores() {
-        function carregarMotoboysValores() {
       const lista = document.getElementById('lista-motoboys');
-      debugEl.innerText = "Carregando valores a pagar para motoboys";
       lista.innerHTML = "<p>Carregando...</p>";
-      
       db.collection("pedidos")
         .get()
         .then(snapshot => {
           lista.innerHTML = "";
           let temPedido = false;
-          
           snapshot.forEach(doc => {
             const p = doc.data();
             if(p.status !== "aceito") return;
@@ -262,7 +242,6 @@
               </div>
             `;
           });
-
           if(!temPedido){
             lista.innerHTML = '<p class="sem-dados">Nenhum valor pendente de pagamento.</p>';
           }
@@ -272,42 +251,21 @@
         })
     }
 
-
-          snapshot.forEach(doc => {
-            const p = doc.data();
-            lista.innerHTML += `
-              <div class="motoboy-valor">
-                <p><strong>🏍️ ${p.motoboyNome || 'Motoboy'}</strong></p>
-                <p>📦 Pedido de: ${p.restauranteNome || 'Restaurante'}</p>
-                <p>💰 <strong>Valor a receber: R$ ${p.valorMotoboy.toFixed(2).replace('.', ',')}</strong></p>
-                <p style="font-size:12px;color:#888;">${formatarData(p.data)}</p>
-                <button class="btn-verde" onclick="marcarComoPago('${doc.id}', '${p.motoboyId}')">✅ MARCAR COMO PAGO</button>
-              </div>
-            `;
-          });
-        });
-    }
-
-    // Aba 4: Usuários + Resumo
     function carregarUsuarios() {
       const lista = document.getElementById('lista-usuarios');
       let totalPedidos = 0;
       let totalTaxa = 0;
-      
       db.collection("usuarios")
         .onSnapshot(snapUsuarios => {
           lista.innerHTML = "";
-          
           if (snapUsuarios.empty) {
             lista.innerHTML = '<p class="sem-dados">Nenhum usuário cadastrado.</p>';
           }
-          
           snapUsuarios.forEach(doc => {
             const u = doc.data();
             const tipoBadge = u.tipo === 'restaurante' 
               ? '<span class="tipo-badge tipo-restaurante">🍽️ Restaurante</span>'
               : '<span class="tipo-badge tipo-motoboy">🏍️ Motoboy</span>';
-            
             lista.innerHTML += `
               <div class="usuario">
                 <h4>${u.nome || 'Sem nome'} ${tipoBadge}</h4>
@@ -318,21 +276,19 @@
           });
         });
 
-      // Resumo financeiro
       db.collection("pedidos").get().then(snap => {
         totalPedidos = snap.size;
         snap.forEach(doc => {
           const p = doc.data();
-          if (p.valorDono) totalTaxa += p.valorDono;
+          if (p.valorDono) totalTaxa += Number(p.valorDono);
         });
         document.getElementById('total-pedidos').textContent = totalPedidos;
-        document.getElementById('total-taxa').textContent = 'R$ ' + totalTaxa.toFixed(2).replace('.', ',');
-        document.getElementById('total-ganho').textContent = 'R$ ' + totalTaxa.toFixed(2).replace('.', ',');
+        document.getElementById('total-taxa').textContent = 'R$ ' + valorSeguro(totalTaxa);
+        document.getElementById('total-ganho').textContent = 'R$ ' + valorSeguro(totalTaxa);
       });
     }
 
-    // Inicializar
     carregarAguardandoPix();
-  </script>
+</script>
 </body>
 </html>
