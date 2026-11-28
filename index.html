@@ -236,18 +236,42 @@
 
     // Aba 3: Motoboys — valores a receber
     function carregarMotoboysValores() {
+        function carregarMotoboysValores() {
       const lista = document.getElementById('lista-motoboys');
+      debugEl.innerText = "Carregando valores a pagar para motoboys";
+      lista.innerHTML = "<p>Carregando...</p>";
       
       db.collection("pedidos")
-        .where("status", "==", "aceito")
-        .where("pagoParaMotoboy", "!=", true)
-        .onSnapshot(snapshot => {
+        .get()
+        .then(snapshot => {
           lista.innerHTML = "";
+          let temPedido = false;
           
-          if (snapshot.empty) {
+          snapshot.forEach(doc => {
+            const p = doc.data();
+            if(p.status !== "aceito") return;
+            if(p.pagoParaMotoboy === true) return;
+            temPedido = true;
+            lista.innerHTML += `
+              <div class="motoboy-valor">
+                <p><strong>🏍️ ${p.motoboyNome || 'Motoboy sem nome'}</strong></p>
+                <p>📦 Pedido de: ${p.restauranteNome || 'Restaurante'}</p>
+                <p>💰 <strong>Valor a receber: R$ ${valorSeguro(p.valorMotoboy)}</strong></p>
+                <p style="font-size:12px;color:#888;">${formatarData(p.data)}</p>
+                <button class="btn-verde" onclick="marcarComoPago('${doc.id}', '${p.motoboyId}')">✅ MARCAR COMO PAGO</button>
+              </div>
+            `;
+          });
+
+          if(!temPedido){
             lista.innerHTML = '<p class="sem-dados">Nenhum valor pendente de pagamento.</p>';
-            return;
           }
+        })
+        .catch((erro)=>{
+          lista.innerHTML = `<p style="color:red;">ERRO: ${erro.message}</p>`;
+        })
+    }
+
 
           snapshot.forEach(doc => {
             const p = doc.data();
