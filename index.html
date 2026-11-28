@@ -9,197 +9,311 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
     body { background: #f4f4f4; padding: 15px; }
-    header { background: #111; color: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; }
-    h1 { font-size: 20px; }
-    .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    button { background: #f59e0b; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-size: 15px; cursor: pointer; font-weight: bold; margin: 5px 3px; }
-    button.sucesso { background: #16a34a; }
-    .pedido { border-left: 4px solid #f59e0b; padding: 12px 15px; margin: 10px 0; background: #fffbeb; border-radius: 6px; }
-    .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
-    .tab { padding: 10px 15px; background: #ddd; border-radius: 6px; cursor: pointer; font-size: 14px; }
-    .tab.ativa { background: #f59e0b; color: white; }
-    .aba { display: none; }
-    .aba.mostra { display: block; }
-    .carregando { text-align: center; padding: 50px; font-size: 18px; color: #666; }
-    .vazio { text-align: center; color: #888; padding: 20px; }
-    .valor-destaque { font-size: 22px; font-weight: bold; color: #16a34a; }
-    hr { border: none; border-top: 1px solid #eee; margin: 15px 0; }
+    header { background: #111; color: white; padding: 18px 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+    h1 { font-size: 22px; }
+    .abas { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .aba-btn { flex: 1; min-width: 100px; padding: 10px; background: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; color: #555; }
+    .aba-btn.ativo { background: #111; color: white; }
+    .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    h2 { font-size: 17px; margin-bottom: 15px; color: #222; }
+    .pedido, .usuario { border: 1px solid #eee; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+    .pedido h4, .usuario h4 { font-size: 15px; margin-bottom: 6px; color: #222; }
+    p { font-size: 14px; margin-bottom: 4px; color: #555; }
+    .status { display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-top: 4px; }
+    .status.pendente { background: #fef3c7; color: #92400e; }
+    .status.aguardando { background: #fde68a; color: #b45309; }
+    .status.confirmado { background: #dcfce7; color: #166534; }
+    .status.pago { background: #d1fae5; color: #065f46; }
+    button { border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px; }
+    .btn-verde { background: #22c55e; color: white; margin-top: 8px; width: 100%; }
+    .btn-azul { background: #3b82f6; color: white; margin-top: 6px; }
+    .btn-vermelho { background: #ef4444; color: white; margin-top: 6px; }
+    .sem-dados { text-align: center; color: #888; padding: 25px; }
+    .oculto { display: none !important; }
+    .resumo-box { background: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+    .resumo-box p { font-size: 15px; margin-bottom: 5px; }
+    .resumo-box .total { font-size: 20px; font-weight: bold; color: #16a34a; }
+    .divisor { border-top: 1px dashed #ddd; margin: 15px 0; }
+    .motoboy-valor { background: #fef9c3; padding: 10px; border-radius: 6px; margin-top: 8px; }
+    .motoboy-valor.pago { background: #dcfce7; }
+    .tipo-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px; }
+    .tipo-restaurante { background: #dbeafe; color: #1e40af; }
+    .tipo-motoboy { background: #dcfce7; color: #166534; }
   </style>
 </head>
 <body>
+  <header>
+    <h1>🏍️ Painel do Dono — Motoflash</h1>
+  </header>
 
-<header>
-  <h1>🏍️ Painel do Dono — Motoflash</h1>
-</header>
-
-<div id="telaCarregando" class="carregando">🔄 Carregando dados...</div>
-<div id="conteudo" style="display:none;">
-
-  <div class="tabs">
-    <div class="tab ativa" onclick="mostrarAba('pedidos')">📦 Pedidos</div>
-    <div class="tab" onclick="mostrarAba('usuarios')">👤 Usuários</div>
-    <div class="tab" onclick="mostrarAba('financeiro')">💰 Financeiro</div>
+  <div class="abas">
+    <button class="aba-btn ativo" onclick="mostrarAba('pix')">⏳ PIX</button>
+    <button class="aba-btn" onclick="mostrarAba('pedidos')">📦 Pedidos</button>
+    <button class="aba-btn" onclick="mostrarAba('motoboys')">🏍️ Motoboys</button>
+    <button class="aba-btn" onclick="mostrarAba('usuarios')">👥 Usuários</button>
   </div>
 
-  <!-- Pedidos -->
-  <div id="pedidos" class="aba mostra">
+  <!-- Aba: Aguardando Confirmação de PIX -->
+  <div id="area-pix">
     <div class="card">
-      <h3>📦 Aguardando Confirmação de PIX</h3>
-      <div id="listaPedidos"></div>
+      <h2>⏳ Aguardando Confirmação de PIX</h2>
+      <div id="lista-pix">
+        <p class="sem-dados">Nenhum pedido aguardando confirmação.</p>
+      </div>
     </div>
   </div>
 
-  <!-- Usuários -->
-  <div id="usuarios" class="aba">
+  <!-- Aba: Todos os Pedidos -->
+  <div id="area-pedidos" class="oculto">
     <div class="card">
-      <h3>👤 Todos os Usuários Cadastrados</h3>
-      <div id="listaUsuarios"></div>
+      <h2>📋 Todos os Pedidos</h2>
+      <div id="lista-pedidos">
+        <p class="sem-dados">Carregando...</p>
+      </div>
     </div>
   </div>
 
-  <!-- Financeiro -->
-  <div id="financeiro" class="aba">
+  <!-- Aba: Motoboys e Valores a Pagar -->
+  <div id="area-motoboys" class="oculto">
     <div class="card">
-      <h3>💰 Resumo Financeiro</h3>
-      <p style="font-size:17px; margin:8px 0;">Total de entregas concluídas: <strong id="totalEntregas">0</strong></p>
-      <p style="font-size:17px; margin:8px 0;">Sua receita (R$2,00 por entrega): <span class="valor-destaque" id="suaReceita">R$ 0,00</span></p>
-      <p style="font-size:15px; margin:8px 0; color:#666;">Total repassado aos motoboys: <span id="totalMotoboys">R$ 0,00</span></p>
-      <hr>
-      <h4>📋 Histórico Completo</h4>
-      <div id="historico"></div>
+      <h2>🏍️ Valores a Pagar — Motoboys</h2>
+      <div id="lista-motoboys">
+        <p class="sem-dados">Carregando...</p>
+      </div>
     </div>
   </div>
-</div>
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBD9qiDcnYQJDGn850KUkMpiBatuP0DWT8",
-  authDomain: "motoflash-b1396.firebaseapp.com",
-  projectId: "motoflash-b1396",
-  storageBucket: "motoflash-b1396.firebasestorage.app"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+  <!-- Aba: Todos os Usuários -->
+  <div id="area-usuarios" class="oculto">
+    <div class="card">
+      <h2>👥 Usuários Cadastrados</h2>
+      <div id="lista-usuarios">
+        <p class="sem-dados">Carregando...</p>
+      </div>
+    </div>
 
-document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    await carregarTudo();
-    document.getElementById('telaCarregando').style.display = 'none';
-    document.getElementById('conteudo').style.display = 'block';
-  } catch (e) {
-    document.getElementById('telaCarregando').innerHTML = '❌ Erro: ' + e.message + '<br>Verifique as regras do Firestore';
-    console.error(e);
-  }
-});
+    <div class="card">
+      <h2>📊 Resumo Geral</h2>
+      <div class="resumo-box">
+        <p><strong>Total de pedidos:</strong> <span id="total-pedidos">0</span></p>
+        <p><strong>Sua taxa (20%):</strong> <span id="total-taxa">R$ 0,00</span></p>
+        <p class="total">💰 Total ganho: <span id="total-ganho">R$ 0,00</span></p>
+      </div>
+    </div>
+  </div>
 
-function mostrarAba(nome) {
-  document.querySelectorAll('.aba').forEach(a => a.classList.remove('mostra'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativa'));
-  document.getElementById(nome).classList.add('mostra');
-  event.target.classList.add('ativa');
-}
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBD9qiDcnYQJDGn850KUkMpiBatuP0DWT8",
+      authDomain: "motoflash-b1396.firebaseapp.com",
+      projectId: "motoflash-b1396",
+      storageBucket: "motoflash-b1396.firebasestorage.app",
+      messagingSenderId: "709365607477",
+      appId: "1:709365607477:web:5a83bf82fafef1ca9e957c"
+    };
 
-async function carregarTudo() {
-  carregarPedidos();
-  carregarUsuarios();
-  carregarFinanceiro();
-}
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-async function carregarPedidos() {
-  const snap = await db.collection('pedidos')
-    .where('status', '==', 'aguardando-pix')
-    .orderBy('data', 'desc').get();
-  
-  document.getElementById('listaPedidos').innerHTML = snap.empty
-    ? '<p class="vazio">Nenhum pedido aguardando PIX ✅</p>'
-    : snap.docs.map(doc => {
-        const p = { id: doc.id, ...doc.data() };
-        return `
-          <div class="pedido">
-            <p><strong>Restaurante:</strong> ${p.nomeRestaurante || '—'}</p>
-            <p><strong>Entrega:</strong> ${p.endereco}</p>
-            <p>💰 Sua parte: R$ 2,00 | 🏍️ Motoboy: R$ 8,00</p>
-            <button class="sucesso" onclick="confirmarPix('${p.id}')">✅ PIX CONFIRMADO — Liberar</button>
-          </div>
-        `;
-      }).join('');
-}
+    let abaAtual = 'pix';
 
-async function confirmarPix(idPedido) {
-  if (!confirm('Confirma que o PIX foi recebido?')) return;
-  
-  const pedidoRef = db.collection('pedidos').doc(idPedido);
-  const pedidoDoc = await pedidoRef.get();
-  const pedido = pedidoDoc.data();
-  
-  await db.runTransaction(async (tx) => {
-    tx.update(pedidoRef, {
-      status: 'disponivel',
-      dataPixConfirmado: new Date().toISOString(),
-      confirmadoPor: 'Dono (acesso direto)'
-    });
-    tx.collection('historico').add({
-      idPedido: idPedido,
-      restaurante: pedido.nomeRestaurante,
-      endereco: pedido.endereco,
-      taxaDono: 2.00,
-      valorMotoboy: 8.00,
-      data: new Date().toISOString(),
-      status: 'concluido'
-    });
-  });
-  
-  alert('✅ Pedido liberado! Agora está disponível para os motoboys!');
-  carregarPedidos();
-  carregarFinanceiro();
-}
+    function mostrarAba(nome) {
+      abaAtual = nome;
+      document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativo'));
+      event.target.classList.add('ativo');
+      
+      document.getElementById('area-pix').classList.add('oculto');
+      document.getElementById('area-pedidos').classList.add('oculto');
+      document.getElementById('area-motoboys').classList.add('oculto');
+      document.getElementById('area-usuarios').classList.add('oculto');
+      
+      document.getElementById('area-' + nome).classList.remove('oculto');
+      
+      if (nome === 'pix') carregarAguardandoPix();
+      if (nome === 'pedidos') carregarTodosPedidos();
+      if (nome === 'motoboys') carregarMotoboysValores();
+      if (nome === 'usuarios') carregarUsuarios();
+    }
 
-async function carregarUsuarios() {
-  const snap = await db.collection('usuarios')
+    // Aprovar PIX — libera pedido para motoboys
+    function aprovarPix(pedidoId) {
+      if (!confirm("✅ Confirmar PIX? O pedido ficará disponível para os motoboys aceitarem.")) return;
+      
+      db.collection("pedidos").doc(pedidoId).update({
+        status: "confirmado"
+      }).then(() => {
+        alert("✅ PIX confirmado! Pedido liberado.");
+      }).catch(() => {
+        alert("❌ Erro ao confirmar");
+      });
+    }
 
+    // Marcar corrida como PAGA para o motoboy
+    function marcarComoPago(pedidoId, motoboyId) {
+      if (!confirm("✅ Marcar como PAGO? O valor vai ser zerado da conta do motoboy.")) return;
+      
+      db.collection("pedidos").doc(pedidoId).update({
+        pagoParaMotoboy: true
+      }).then(() => {
+        alert("✅ Marcado como PAGO!");
+      }).catch(() => {
+        alert("❌ Erro");
+      });
+    }
 
-    .orderBy('DataCadastro', 'desc').get();
-  
-  document.getElementById('listaUsuarios').innerHTML = snap.empty
-    ? '<p class="vazio">Nenhum usuário cadastrado ainda.</p>'
-    : snap.docs.map(doc => {
-        const u = doc.data();
-        const tipo = u.Tipo === 'restaurante' ? '🍽️ Restaurante' : u.Tipo === 'motoboy' ? '🏍️ Motoboy' : '👨‍💼 Dono';
-        const data = u.DataCadastro || '—';
+    function formatarData(timestamp) {
+      if (!timestamp) return "";
+      return new Date(timestamp.toDate()).toLocaleString('pt-BR');
+    }
 
-        return `
-          <div style="padding:12px 0; border-bottom:1px solid #eee;">
-            <strong>${u.Nome || 'Sem nome'}</strong> — ${tipo}<br>
-            <span style="font-size:13px; color:#666;">${u.Email || 'Sem e-mail'}</span><br>
-            <span style="font-size:12px; color:#999;">Cadastrado em: ${data}</span>
-          </div>
-        `;
-      }).join('');
-}
+    // Aba 1: Aguardando Confirmação de PIX
+    function carregarAguardandoPix() {
+      const lista = document.getElementById('lista-pix');
+      
+      db.collection("pedidos")
+        .where("status", "==", "aguardando-aprovacao")
+        .orderBy("data", "desc")
+        .onSnapshot(snapshot => {
+          lista.innerHTML = "";
+          
+          if (snapshot.empty) {
+            lista.innerHTML = '<p class="sem-dados">Nenhum pedido aguardando confirmação.</p>';
+            return;
+          }
 
-async function carregarFinanceiro() {
-  const snap = await db.collection('historico').orderBy('data', 'desc').get();
-  const totalEntregas = snap.size;
-  const totalDono = snap.docs.reduce((s, d) => s + (d.data().taxaDono || 0), 0);
-  const totalMotoboys = snap.docs.reduce((s, d) => s + (d.data().valorMotoboy || 0), 0);
-  
-  document.getElementById('totalEntregas').textContent = totalEntregas;
-  document.getElementById('suaReceita').textContent = `R$ ${totalDono.toFixed(2)}`;
-  document.getElementById('totalMotoboys').textContent = `R$ ${totalMotoboys.toFixed(2)}`;
-  
-  document.getElementById('historico').innerHTML = snap.empty
-    ? '<p class="vazio">Nenhuma entrega concluída ainda.</p>'
-    : snap.docs.map(doc => {
-        const h = doc.data();
-        const data = new Date(h.data).toLocaleString('pt-BR');
-        return `
-          <div style="padding:8px 0; border-bottom:1px solid #eee; font-size:14px;">
-            <strong>${data}</strong> — ${h.restaurante || 'Restaurante'}<br>
-            Sua parte: R$ ${h.taxaDono.toFixed(2)} | Motoboy: R$ ${h.valorMotoboy.toFixed(2)}
-          </div>
-        `;
-      }).join('');
-}
-</script>
+          snapshot.forEach(doc => {
+            const p = doc.data();
+            lista.innerHTML += `
+              <div class="pedido">
+                <h4>📦 ${p.restauranteNome || 'Restaurante'}</h4>
+                <p><strong>Valor:</strong> R$ ${p.valorTotal.toFixed(2).replace('.', ',')}</p>
+                <p><strong>Seu (20%):</strong> R$ ${p.valorDono.toFixed(2).replace('.', ',')}</p>
+                <p><strong>Motoboy (80%):</strong> R$ ${p.valorMotoboy.toFixed(2).replace('.', ',')}</p>
+                <p><strong>Endereço:</strong> ${p.endereco}</p>
+                <p style="font-size:12px;color:#888;">${formatarData(p.data)}</p>
+                <span class="status aguardando">⏳ Aguardando sua confirmação</span>
+                <button class="btn-verde" onclick="aprovarPix('${doc.id}')">✅ CONFIRMAR PIX — Liberar Pedido</button>
+              </div>
+            `;
+          });
+        });
+    }
+
+    // Aba 2: Todos os Pedidos
+    function carregarTodosPedidos() {
+      const lista = document.getElementById('lista-pedidos');
+      
+      db.collection("pedidos")
+        .orderBy("data", "desc")
+        .limit(50)
+        .onSnapshot(snapshot => {
+          lista.innerHTML = "";
+          
+          if (snapshot.empty) {
+            lista.innerHTML = '<p class="sem-dados">Nenhum pedido criado ainda.</p>';
+            return;
+          }
+
+          snapshot.forEach(doc => {
+            const p = doc.data();
+            let statusTexto = p.status;
+            let statusClasse = 'pendente';
+            
+            if (p.status === 'pendente') { statusTexto = '⏳ Restaurante não enviou PIX'; statusClasse = 'pendente'; }
+            if (p.status === 'aguardando-aprovacao') { statusTexto = '⏳ Aguardando SUA confirmação'; statusClasse = 'aguardando'; }
+            if (p.status === 'confirmado') { statusTexto = '✅ Disponível para motoboys'; statusClasse = 'confirmado'; }
+            if (p.status === 'aceito') { statusTexto = '🏍️ Aceito por: ' + (p.motoboyNome || 'Motoboy'); statusClasse = 'confirmado'; }
+            
+            lista.innerHTML += `
+              <div class="pedido">
+                <h4>📦 ${p.restauranteNome || 'Restaurante'}</h4>
+                <p><strong>Valor:</strong> R$ ${p.valorTotal.toFixed(2).replace('.', ',')}</p>
+                <p><strong>Motoboy:</strong> ${p.motoboyNome || 'Aguardando...'}</p>
+                <p style="font-size:12px;color:#888;">${formatarData(p.data)}</p>
+                <span class="status ${statusClasse}">${statusTexto}</span>
+              </div>
+            `;
+          });
+        });
+    }
+
+    // Aba 3: Motoboys — valores a receber
+    function carregarMotoboysValores() {
+      const lista = document.getElementById('lista-motoboys');
+      
+      db.collection("pedidos")
+        .where("status", "==", "aceito")
+        .where("pagoParaMotoboy", "!=", true)
+        .orderBy("data", "desc")
+        .onSnapshot(snapshot => {
+          lista.innerHTML = "";
+          
+          if (snapshot.empty) {
+            lista.innerHTML = '<p class="sem-dados">Nenhum valor pendente de pagamento.</p>';
+            return;
+          }
+
+          snapshot.forEach(doc => {
+            const p = doc.data();
+            lista.innerHTML += `
+              <div class="motoboy-valor">
+                <p><strong>🏍️ ${p.motoboyNome || 'Motoboy'}</strong></p>
+                <p>📦 Pedido de: ${p.restauranteNome || 'Restaurante'}</p>
+                <p>💰 <strong>Valor a receber: R$ ${p.valorMotoboy.toFixed(2).replace('.', ',')}</strong></p>
+                <p style="font-size:12px;color:#888;">${formatarData(p.data)}</p>
+                <button class="btn-verde" onclick="marcarComoPago('${doc.id}', '${p.motoboyId}')">✅ MARCAR COMO PAGO</button>
+              </div>
+            `;
+          });
+        });
+    }
+
+    // Aba 4: Usuários + Resumo
+    function carregarUsuarios() {
+      const lista = document.getElementById('lista-usuarios');
+      let totalPedidos = 0;
+      let totalTaxa = 0;
+      
+      db.collection("usuarios")
+        .orderBy("nome")
+        .onSnapshot(snapUsuarios => {
+          lista.innerHTML = "";
+          
+          if (snapUsuarios.empty) {
+            lista.innerHTML = '<p class="sem-dados">Nenhum usuário cadastrado.</p>';
+          }
+          
+          snapUsuarios.forEach(doc => {
+            const u = doc.data();
+            const tipoBadge = u.tipo === 'restaurante' 
+              ? '<span class="tipo-badge tipo-restaurante">🍽️ Restaurante</span>'
+              : '<span class="tipo-badge tipo-motoboy">🏍️ Motoboy</span>';
+            
+            lista.innerHTML += `
+              <div class="usuario">
+                <h4>${u.nome || 'Sem nome'} ${tipoBadge}</h4>
+                <p>📧 ${u.email || 'Sem e-mail'}</p>
+                <p style="font-size:12px;color:#888;">Cadastrado: ${u.dataCadastro ? new Date(u.dataCadastro.toDate()).toLocaleDateString('pt-BR') : ''}</p>
+              </div>
+            `;
+          });
+        });
+
+      // Resumo financeiro
+      db.collection("pedidos").get().then(snap => {
+        totalPedidos = snap.size;
+        snap.forEach(doc => {
+          const p = doc.data();
+          if (p.valorDono) totalTaxa += p.valorDono;
+        });
+        document.getElementById('total-pedidos').textContent = totalPedidos;
+        document.getElementById('total-taxa').textContent = 'R$ ' + totalTaxa.toFixed(2).replace('.', ',');
+        document.getElementById('total-ganho').textContent = 'R$ ' + totalTaxa.toFixed(2).replace('.', ',');
+      });
+    }
+
+    // Inicializar
+    carregarAguardandoPix();
+  </script>
 </body>
 </html>
